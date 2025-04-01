@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Calendar</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+        .nav {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #444;
+            color: white;
+            padding: 15px 20px;
+        }
+        .nav a {
+            color: white;
+            text-decoration: none;
+            padding: 10px 15px;
+        }
+        .nav a:hover {
+            background: #666;
+            border-radius: 5px;
+        }
+        .logo{
+            margin-right:auto;
+        }
+        .container {
+            height: 100vh;
+            display: flex;
+            width: 100%;
+        }
+        .todo {
+            width: 30%;
+            background: #333;
+            color: white;
+            padding: 20px;
+            padding-top: 47px;
+        }
+        .todo div {
+            padding: 10px;
+            cursor: pointer;
+            border-bottom: 1px solid white;
+        }
+        .op:hover {
+            background: #555;
+        }
+        .not:hover {
+            background: #333;
+        }
+        .content {
+            display: flex;
+            flex-direction: column;
+            width: 80%;
+        }
+        .month-details {
+            display: flex;
+            flex-direction: row;
+            width: 110%;
+        }
+        .month-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            width: 100%;
+            padding: 10px 0;
+            overflow: hidden;
+        }
+        .month-wrapper {
+            display: flex;
+            justify-content: center;
+            transition: transform 0.5s ease-in-out;
+            width: 150px;
+        }
+        .month-display {
+            font-size: 24px;
+            font-weight: bold;
+            min-width: 150px;
+            text-align: center;
+        }
+        .month-btn {
+            background: #333;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            cursor: pointer;
+            font-size: 18px;
+            border-radius: 5px;
+            transition: background 0.3s;
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        .month-btn:hover {
+            background: #555;
+        }
+        .month-btn.prev {
+            left: 250px;
+        }
+        .month-btn.next {
+            right: 250px;
+        }
+        .section {
+            width: 100%;
+            padding: 20px;
+            border-top: 1px solid #ddd;
+        }
+        .task-list {
+            margin-top: 20px;
+            list-style: none;
+            padding: 0;
+        }
+        .task-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            border-bottom: 1px solid #ddd;
+        }
+        .task-item button {
+            background: #ff4444;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+            border-radius: 3px;
+            margin-left: 10px;
+        }
+        .task-item button:hover {
+            background: #cc0000;
+        }
+        #taskInput, #taskTime {
+            padding: 8px;
+            margin-right: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        #taskInput {
+            width: 200px;
+        }
+        #section2 button {
+            padding: 8px 15px;
+            background: #333;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        #section2 button:hover {
+            background: #555;
+        }
+        .popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        .popup-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .popup-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            width: 80%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .popup-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .popup-close {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="popup-overlay" id="todaysEventsPopup">
+        <div class="popup-content">
+            <div class="popup-header">
+                <h2>Today's Events</h2>
+                <button class="popup-close" onclick="closePopup()">X</button>
+            </div>
+            <div id="todaysEventsList"></div>
+        </div>
+    </div>
+<div class="nav">
+    <div class="logo"><strong>Smart Calendar</strong></div>
+    <div>
+        <a href="">Calendar</a>
+        <a href="">About</a>    
+    </div>
+</div>
+<div class="container">
+    <div class="todo" id="todo">
+        <div class="not"><h2>To Do:</h2></div>
+        <div class="not"><h2>Dues:</h2></div>
+    </div>
+    <div class="content">
+        <div class="month-container">
+            <button class="month-btn prev" onclick="prevMonth()">&#10094; Prev</button>
+            <div class="month-wrapper">
+                <div class="month-display" id="monthDisplay">January</div>
+            </div>
+            <button class="month-btn next" onclick="nextMonth()">Next &#10095;</button>
+        </div>
+        <div class="month-details">
+            <div id="section1" class="section">
+                <div id="calendarSection">
+                    <iframe id="calendarFrame" src="jan.html" width="100%" height="500px" style="border: none;"></iframe>
+                </div>
+            </div>
+            <div id="section2" class="section">
+                <h2>Details</h2>
+                <p id="selected-info">Select a date to see details.</p>
+                <h3>Tasks</h3>
+                <input type="text" id="taskInput" placeholder="Enter a task">
+                <input type="time" id="taskTime">
+                <button onclick="addTask()">Add Task</button><br>
+                <button onclick="clearAllTasks()" style="background-color: #ff4444;">Clear All</button>
+                <ul id="taskList" class="task-list"></ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+        function showTodaysEvents() {
+            const today = new Date();
+            const todayString = today.toLocaleDateString('en-US', {
+                month: 'long',
+                day: 'numeric',
+                year: 'numeric'
+            });
+            
+            const todaysTasks = tasks[todayString] || [];
+            const eventsList = document.getElementById('todaysEventsList');
+            
+            if (todaysTasks.length === 0) {
+                eventsList.innerHTML = '<p>No events scheduled for today.</p>';
+            } else {
+                eventsList.innerHTML = '<ul>' + 
+                    todaysTasks.map(task => `<li>${task.time} - ${task.task}</li>`).join('') + '</ul>';
+            }
+            
+            document.getElementById('todaysEventsPopup').classList.add('active');
+        }
+
+        function closePopup() {
+            document.getElementById('todaysEventsPopup').classList.remove('active');
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            setTimeout(showTodaysEvents, 500);
+        });
+
+const months = ["jan", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+let currentMonthIndex = new Date().getMonth();
+let selectedDate = '';
+let tasks = JSON.parse(localStorage.getItem("tasks")) || {};
+
+function updateMonth() {
+    document.getElementById("monthDisplay").innerText = months[currentMonthIndex];
+    document.getElementById("calendarFrame").src = months[currentMonthIndex].toLowerCase() + ".html";
+}
+function prevMonth() {
+    currentMonthIndex = (currentMonthIndex === 0) ? 11 : currentMonthIndex - 1;
+    updateMonth();
+}
+function nextMonth() {
+    currentMonthIndex = (currentMonthIndex === 11) ? 0 : currentMonthIndex + 1;
+    updateMonth();
+}
+
+window.addEventListener('message', function(event) {
+    if (event.data && event.data.startsWith('Selected Date:')) {
+        selectedDate = event.data.replace('Selected Date: ', '');
+        document.getElementById('selected-info').innerText = event.data;
+        loadTasks();
+    }
+});
+
+function addTask() {
+    if (!selectedDate) {
+        alert("Please select a date first!");
+        return;
+    }
+    
+    const taskInput = document.getElementById("taskInput");
+    const taskTime = document.getElementById("taskTime");
+    
+    const taskText = taskInput.value.trim();
+    const timeText = taskTime.value.trim();
+
+    if (!taskText || !timeText) {
+        alert("Please enter both task description and time!");
+        return;
+    }
+
+    if (!tasks[selectedDate]) {
+        tasks[selectedDate] = [];
+    }
+
+    const taskId = Date.now();
+    tasks[selectedDate].push({
+        id: taskId,
+        time: timeText,
+        task: taskText
+    });
+
+    localStorage.setItem("tasks", JSON.stringify(tasks));
+
+    taskInput.value = "";
+    taskTime.value = "";
+    loadTasks();
+}
+
+function loadTasks() {
+    const taskList = document.getElementById("taskList");
+    taskList.innerHTML = "";
+
+    if (!selectedDate || !tasks[selectedDate]) {
+        return;
+    }
+
+    tasks[selectedDate].forEach(task => {
+        const taskItem = document.createElement("li");
+        taskItem.className = "task-item";
+        
+        taskItem.innerHTML = `
+            <span>${task.time} - ${task.task}</span>
+            <button onclick="removeTask(${task.id})">Delete</button>
+        `;
+        
+        taskList.appendChild(taskItem);
+    });
+}
+
+function removeTask(taskId) {
+    if (!selectedDate || !tasks[selectedDate]) return;
+    tasks[selectedDate] = tasks[selectedDate].filter(task => task.id !== taskId);
+    if (tasks[selectedDate].length === 0) delete tasks[selectedDate];
+    localStorage.setItem("tasks", JSON.stringify(tasks));
+    loadTasks();
+}
+function clearAllTasks() {
+    if (confirm("Are you sure you want to delete ALL tasks? This cannot be undone!")) {
+        localStorage.clear();
+        tasks = {};
+        loadTasks();
+        alert("All tasks have been cleared.");
+    }
+}
+updateMonth();
+</script>
+</body>
+</html>
